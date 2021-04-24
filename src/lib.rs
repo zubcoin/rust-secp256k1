@@ -435,7 +435,7 @@ impl ::serde::Serialize for Signature {
         if s.is_human_readable() {
             s.collect_str(self)
         } else {
-            s.serialize_bytes(&self.serialize_der())
+            s.serialize_bytes(&self.serialize_compact())
         }
     }
 }
@@ -450,9 +450,21 @@ impl<'de> ::serde::Deserialize<'de> for Signature {
         } else {
             d.deserialize_bytes(serde_util::BytesVisitor::new(
                 "raw byte stream, that represents a DER encoded Signature",
-                Signature::from_der
+                Signature::from_compact
             ))
         }
+    }
+}
+
+impl PartialOrd for Signature {
+    fn partial_cmp(&self, other: &Signature) -> Option<::core::cmp::Ordering> {
+        self.serialize_compact().partial_cmp(&other.serialize_compact())
+    }
+}
+
+impl Ord for Signature {
+    fn cmp(&self, other: &Signature) -> ::core::cmp::Ordering {
+        self.serialize_compact().cmp(&other.serialize_compact())
     }
 }
 
