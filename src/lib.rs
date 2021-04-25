@@ -183,7 +183,7 @@ fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 
 impl fmt::Display for Signature {
 fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-    let sig = self.serialize_der();
+    let sig = self.serialize_compact();
     for v in sig.iter() {
         write!(f, "{:02x}", v)?;
     }
@@ -194,9 +194,9 @@ fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 impl str::FromStr for Signature {
 type Err = Error;
 fn from_str(s: &str) -> Result<Signature, Error> {
-    let mut res = [0; 72];
+    let mut res = [0; 64];
     match from_hex(s, &mut res) {
-        Ok(x) => Signature::from_der(&res[0..x]),
+        Ok(x) => Signature::from_compact(&res[0..x]),
         _ => Err(Error::InvalidSignature),
     }
 }
