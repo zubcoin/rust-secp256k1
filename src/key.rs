@@ -15,7 +15,6 @@
 
 //! # Public and secret keys
 
-use base64::URL_SAFE_NO_PAD;
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 
 use core::{fmt, str};
