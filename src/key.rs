@@ -15,6 +15,7 @@
 
 //! # Public and secret keys
 
+use base64::URL_SAFE_NO_PAD;
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 
 use core::{fmt, str};
@@ -42,14 +43,14 @@ impl fmt::LowerHex for SecretKey {
 
 impl fmt::Display for SecretKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", base64::encode(self.0))
+        write!(f, "{}", base64::encode_config(self.0, URL_SAFE_NO_PAD))
     }
 }
 
 impl str::FromStr for SecretKey {
     type Err = base64::DecodeError;
     fn from_str(s: &str) -> Result<SecretKey, base64::DecodeError> {
-        let decoded = base64::decode(s)?;
+        let decoded = base64::decode_config(s, URL_SAFE_NO_PAD)?;
         let mut arr = [0u8; constants::SECRET_KEY_SIZE];
         for i in 0..constants::SECRET_KEY_SIZE {
             arr[i] = decoded[i]
@@ -89,14 +90,14 @@ impl fmt::LowerHex for PublicKey {
 
 impl fmt::Display for PublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", base64::encode(self.serialize()))
+        write!(f, "{}", base64::encode_config(self.serialize(), URL_SAFE_NO_PAD))
     }
 }
 
 impl str::FromStr for PublicKey {
     type Err = base64::DecodeError;
     fn from_str(s: &str) -> Result<PublicKey, base64::DecodeError> {
-        let decoded = base64::decode(s)?;
+        let decoded = base64::decode_config(s, URL_SAFE_NO_PAD)?;
         match PublicKey::from_slice(&decoded) {
             Ok(pkey) => Ok(pkey),
             _ => Err(base64::DecodeError::InvalidLength) // FIXME: wrong error type
