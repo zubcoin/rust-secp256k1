@@ -184,22 +184,26 @@ fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 impl fmt::Display for Signature {
 fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let sig = self.serialize_compact();
-    for v in sig.iter() {
-        write!(f, "{:02x}", v)?;
-    }
-    Ok(())
+    write!(f, "{}", base64::encode_config(sig, base64::URL_SAFE_NO_PAD))
 }
 }
 
 impl str::FromStr for Signature {
-type Err = Error;
-fn from_str(s: &str) -> Result<Signature, Error> {
+    type Err = base64::DecodeError;
+    fn from_str(s: &str) -> Result<Signature, base64::DecodeError> {
+        let decoded = base64::decode_config(s, base64::URL_SAFE_NO_PAD)?;
+        match Signature::from_compact(&decoded) {
+            Ok(signature) => Ok(signature),
+            _ => Err(base64::DecodeError::InvalidLength) // FIXME: wrong error type
+        }
+    }
+    /*
     let mut res = [0; 64];
     match from_hex(s, &mut res) {
         Ok(x) => Signature::from_compact(&res[0..x]),
         _ => Err(Error::InvalidSignature),
     }
-}
+    */
 }
 
 /// Trait describing something that promises to be a 32-byte random number; in particular,
