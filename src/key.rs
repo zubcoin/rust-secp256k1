@@ -42,18 +42,28 @@ impl fmt::LowerHex for SecretKey {
 
 impl fmt::Display for SecretKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::LowerHex::fmt(self, f)
+        write!(f, "{}", base64::encode(self.0))
     }
 }
 
 impl str::FromStr for SecretKey {
-    type Err = Error;
-    fn from_str(s: &str) -> Result<SecretKey, Error> {
+    type Err = base64::DecodeError;
+    fn from_str(s: &str) -> Result<SecretKey, base64::DecodeError> {
+        let decoded = base64::decode(s)?;
+        let mut arr = [0u8; constants::SECRET_KEY_SIZE];
+        for i in 0..constants::SECRET_KEY_SIZE {
+            arr[i] = decoded[i]
+        }
+        Ok(SecretKey(arr))
+
+        /*
         let mut res = [0; constants::SECRET_KEY_SIZE];
+
         match from_hex(s, &mut res) {
             Ok(constants::SECRET_KEY_SIZE) => Ok(SecretKey(res)),
             _ => Err(Error::InvalidSecretKey)
         }
+        */
     }
 }
 
@@ -79,24 +89,17 @@ impl fmt::LowerHex for PublicKey {
 
 impl fmt::Display for PublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        fmt::LowerHex::fmt(self, f)
+        write!(f, "{}", base64::encode(self.serialize()))
     }
 }
 
 impl str::FromStr for PublicKey {
-    type Err = Error;
-    fn from_str(s: &str) -> Result<PublicKey, Error> {
-        let mut res = [0; constants::UNCOMPRESSED_PUBLIC_KEY_SIZE];
-        match from_hex(s, &mut res) {
-            Ok(constants::PUBLIC_KEY_SIZE) => {
-                PublicKey::from_slice(
-                    &res[0..constants::PUBLIC_KEY_SIZE]
-                )
-            }
-            Ok(constants::UNCOMPRESSED_PUBLIC_KEY_SIZE) => {
-                PublicKey::from_slice(&res)
-            }
-            _ => Err(Error::InvalidPublicKey)
+    type Err = base64::DecodeError;
+    fn from_str(s: &str) -> Result<PublicKey, base64::DecodeError> {
+        let decoded = base64::decode(s)?;
+        match PublicKey::from_slice(&decoded) {
+            Ok(pkey) => Ok(pkey),
+            _ => Err(base64::DecodeError::InvalidLength) // FIXME: wrong error type
         }
     }
 }
