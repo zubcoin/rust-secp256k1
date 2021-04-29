@@ -443,8 +443,8 @@ impl ::serde::Serialize for Signature {
             s.collect_str(self)
         } else {
             let ser = &self.serialize_compact();
-            let mut tup = s.serialize_tuple(33)?;
-            for i in 0..33 {
+            let mut tup = s.serialize_tuple(64)?;
+            for i in 0..64 {
                 tup.serialize_element(&ser[i])?;
             }
             tup.end()
