@@ -16,6 +16,8 @@
 //! # Public and secret keys
 
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
+#[cfg(feature = "serde")] use ::serde::ser::SerializeTuple;
+#[cfg(feature = "serde")] use std::convert::TryInto;
 
 use core::{fmt, str};
 
@@ -222,7 +224,7 @@ impl ::serde::Serialize for SecretKey {
         if s.is_human_readable() {
             s.collect_str(self)
         } else {
-            let ser = self.serialize();
+            let ser: &[u8; 32] = self[..].try_into().unwrap();
             let mut tup = s.serialize_tuple(32)?;
             for i in 0..32 {
                 tup.serialize_element(&ser[i])?;
