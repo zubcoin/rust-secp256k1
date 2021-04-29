@@ -222,7 +222,12 @@ impl ::serde::Serialize for SecretKey {
         if s.is_human_readable() {
             s.collect_str(self)
         } else {
-            s.serialize_bytes(&self[..])
+            let ser = self.serialize();
+            let mut tup = s.serialize_tuple(32)?;
+            for i in 0..32 {
+                tup.serialize_element(&ser[i])?;
+            }
+            tup.end()
         }
     }
 }
@@ -436,7 +441,12 @@ impl ::serde::Serialize for PublicKey {
         if s.is_human_readable() {
             s.collect_str(self)
         } else {
-            s.serialize_bytes(&self.serialize())
+            let ser = self.serialize();
+            let mut tup = s.serialize_tuple(33)?;
+            for i in 0..33 {
+                tup.serialize_element(&ser[i])?;
+            }
+            tup.end()
         }
     }
 }
