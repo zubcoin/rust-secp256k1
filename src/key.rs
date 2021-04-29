@@ -18,6 +18,7 @@
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 #[cfg(feature = "serde")] use ::serde::ser::SerializeTuple;
 #[cfg(feature = "serde")] use std::convert::TryInto;
+#[cfg(feature = "serde")] use serde::de::{self, Deserialize, Deserializer};
 
 use core::{fmt, str};
 
@@ -242,10 +243,8 @@ impl<'de> ::serde::Deserialize<'de> for SecretKey {
                 "a hex string representing 32 byte SecretKey"
             ))
         } else {
-            d.deserialize_bytes(super::serde_util::BytesVisitor::new(
-                "raw 32 bytes SecretKey",
-                SecretKey::from_slice
-            ))
+            let sl: [u8; 32] = ::serde::Deserialize::deserialize(d)?;
+            SecretKey::from_slice(&sl).map_err(de::Error::custom)
         }
     }
 }
@@ -455,16 +454,17 @@ impl ::serde::Serialize for PublicKey {
 
 #[cfg(feature = "serde")]
 impl<'de> ::serde::Deserialize<'de> for PublicKey {
+
     fn deserialize<D: ::serde::Deserializer<'de>>(d: D) -> Result<PublicKey, D::Error> {
         if d.is_human_readable() {
             d.deserialize_str(super::serde_util::FromStrVisitor::new(
                 "an ASCII hex string representing a public key"
             ))
         } else {
-            d.deserialize_bytes(super::serde_util::BytesVisitor::new(
-                "a bytestring representing a public key",
-                PublicKey::from_slice
-            ))
+            // [[u8; 11]; 3] is a workaround as [u8; 33] is unsupported by serde
+            let arr2d: [[u8; 11]; 3] = ::serde::Deserialize::deserialize(d)?;
+            let sl = arr2d.concat();
+            PublicKey::from_slice(&sl).map_err(de::Error::custom)
         }
     }
 }
