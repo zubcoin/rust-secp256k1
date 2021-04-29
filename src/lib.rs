@@ -135,6 +135,9 @@ pub use secp256k1_sys as ffi;
 #[cfg(any(test, feature = "rand"))] use rand::Rng;
 #[cfg(any(test, feature = "std"))] extern crate core;
 #[cfg(all(test, target_arch = "wasm32"))] extern crate wasm_bindgen_test;
+#[cfg(feature = "serde")] use ::serde::ser::SerializeTuple;
+#[cfg(feature = "serde")] use std::convert::TryInto;
+#[cfg(feature = "serde")] use serde::de::{self, Deserialize, Deserializer};
 
 use core::{fmt, ptr, str};
 
@@ -439,7 +442,12 @@ impl ::serde::Serialize for Signature {
         if s.is_human_readable() {
             s.collect_str(self)
         } else {
-            s.serialize_bytes(&self.serialize_compact())
+            let ser = &self.serialize_compact();
+            let mut tup = s.serialize_tuple(33)?;
+            for i in 0..33 {
+                tup.serialize_element(&ser[i])?;
+            }
+            tup.end()
         }
     }
 }
@@ -452,10 +460,10 @@ impl<'de> ::serde::Deserialize<'de> for Signature {
                 "a hex string representing a DER encoded Signature"
             ))
         } else {
-            d.deserialize_bytes(serde_util::BytesVisitor::new(
-                "raw byte stream, that represents a DER encoded Signature",
-                Signature::from_compact
-            ))
+            // [[u8; 32]; 2] is a workaround as [u8; 64] is unsupported by serde
+            let arr2d: [[u8; 32]; 2] = ::serde::Deserialize::deserialize(d)?;
+            let sl = arr2d.concat();
+            Signature::from_compact(&sl).map_err(de::Error::custom)
         }
     }
 }
