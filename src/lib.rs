@@ -187,17 +187,17 @@ fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 impl fmt::Display for Signature {
 fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     let sig = self.serialize_compact();
-    write!(f, "{}", base64::encode_config(sig, base64::URL_SAFE_NO_PAD))
+    write!(f, "{}", bs63::encode(sig).into_string())
 }
 }
 
 impl str::FromStr for Signature {
-    type Err = base64::DecodeError;
-    fn from_str(s: &str) -> Result<Signature, base64::DecodeError> {
-        let decoded = base64::decode_config(s, base64::URL_SAFE_NO_PAD)?;
+    type Err = bs63::decode::Error;
+    fn from_str(s: &str) -> Result<Signature, bs63::decode::Error> {
+        let decoded = bs63::decode(s).into_vec()?;
         match Signature::from_compact(&decoded) {
             Ok(signature) => Ok(signature),
-            _ => Err(base64::DecodeError::InvalidLength) // FIXME: wrong error type
+            _ => Err(bs63::decode::Error::BufferTooSmall) // FIXME: wrong error type
         }
     }
     /*

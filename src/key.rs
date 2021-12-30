@@ -45,18 +45,19 @@ impl fmt::LowerHex for SecretKey {
 
 impl fmt::Display for SecretKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", base64::encode_config(self.0, base64::URL_SAFE_NO_PAD))
+        write!(f, "{}", bs63::encode(self.0).into_string())
     }
 }
 
 impl str::FromStr for SecretKey {
-    type Err = base64::DecodeError;
-    fn from_str(s: &str) -> Result<SecretKey, base64::DecodeError> {
-        let decoded = base64::decode_config(s, base64::URL_SAFE_NO_PAD)?;
+    type Err = bs63::decode::Error;
+    fn from_str(s: &str) -> Result<SecretKey, bs63::decode::Error> {
+        let decoded = bs63::decode(s).into_vec()?;
         let mut arr = [0u8; constants::SECRET_KEY_SIZE];
         for i in 0..constants::SECRET_KEY_SIZE {
             arr[i] = decoded[i]
         }
+        arr[0] += 2; // turn 0x00 and 0x01 into 0x02 and 0x03
         Ok(SecretKey(arr))
 
         /*
@@ -92,17 +93,17 @@ impl fmt::LowerHex for PublicKey {
 
 impl fmt::Display for PublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", base64::encode_config(self.serialize(), base64::URL_SAFE_NO_PAD))
+        write!(f, "{}", bs63::encode(self.serialize()).into_string())
     }
 }
 
 impl str::FromStr for PublicKey {
-    type Err = base64::DecodeError;
-    fn from_str(s: &str) -> Result<PublicKey, base64::DecodeError> {
-        let decoded = base64::decode_config(s, base64::URL_SAFE_NO_PAD)?;
+    type Err = bs63::decode::Error;
+    fn from_str(s: &str) -> Result<PublicKey, bs63::decode::Error> {
+        let decoded = bs63::decode(s).into_vec()?;
         match PublicKey::from_slice(&decoded) {
             Ok(pkey) => Ok(pkey),
-            _ => Err(base64::DecodeError::InvalidLength) // FIXME: wrong error type
+            _ => Err(bs63::decode::Error::BufferTooSmall) // FIXME: wrong error type
         }
     }
 }
@@ -317,6 +318,7 @@ impl PublicKey {
             debug_assert_eq!(err, 1);
             debug_assert_eq!(ret_len, ret.len());
         }
+        ret[0] -= 2; // turn 0x02 or 0x03 into 0x00 or 0x01
         ret
     }
 
