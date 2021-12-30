@@ -57,7 +57,6 @@ impl str::FromStr for SecretKey {
         for i in 0..constants::SECRET_KEY_SIZE {
             arr[i] = decoded[i]
         }
-        arr[0] += 2; // turn 0x00 and 0x01 into 0x02 and 0x03
         Ok(SecretKey(arr))
 
         /*
@@ -93,14 +92,17 @@ impl fmt::LowerHex for PublicKey {
 
 impl fmt::Display for PublicKey {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", bs63::encode(self.serialize()).into_string())
+        let mut skey = self.serialize();
+        skey[0] -= 2;
+        write!(f, "{}", bs63::encode(skey).into_string())
     }
 }
 
 impl str::FromStr for PublicKey {
     type Err = bs63::decode::Error;
     fn from_str(s: &str) -> Result<PublicKey, bs63::decode::Error> {
-        let decoded = bs63::decode(s).into_vec()?;
+        let mut decoded = bs63::decode(s).into_vec()?;
+        decoded[0] += 2;
         match PublicKey::from_slice(&decoded) {
             Ok(pkey) => Ok(pkey),
             _ => Err(bs63::decode::Error::BufferTooSmall) // FIXME: wrong error type
@@ -318,7 +320,6 @@ impl PublicKey {
             debug_assert_eq!(err, 1);
             debug_assert_eq!(ret_len, ret.len());
         }
-        ret[0] -= 2; // turn 0x02 or 0x03 into 0x00 or 0x01
         ret
     }
 
