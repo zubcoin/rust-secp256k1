@@ -1,6 +1,6 @@
 [package]
 name = "secp256k1"
-version = "0.20.3"
+version = "0.20.4"
 authors = [ "Dawid Ciężarkiewicz <dpc@ucore.info>",
             "Andrew Poelstra <apoelstra@wpsoftware.net>" ]
 license = "CC0-1.0"
@@ -30,7 +30,9 @@ secp256k1-sys = { version = "0.4.0", default-features = false, path = "./secp256
 bitcoin_hashes = { version = "0.9", optional = true }
 rand = { version = "0.6", default-features = false, optional = true }
 serde = { version = "1.0", default-features = false, optional = true }
-bs63 = { git = "https://github.com/zubcoin/bs63" }
+bs63 = { git = "https://github.com/zubcoin/bs63", version = "0.4.4"}
+#bs63 = { path = "../bs63", version = "0.4.4" }
+
 
 
 [dev-dependencies]
